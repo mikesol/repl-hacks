@@ -5,7 +5,6 @@ import Control.Apply.Indexed ((:*>))
 import Control.Comonad.Cofree (Cofree, head, tail)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
-import Data.Maybe (fromMaybe)
 import Data.NonEmpty (NonEmpty, (:|))
 import Data.Tuple (fst, snd)
 import Data.Tuple.Nested (type (/\), (/\))
@@ -65,12 +64,6 @@ type Acc
     , u0ph :: Number
     , u1ph :: Number
     , u2ph :: Number
-    , r0p :: Number -> Number
-    , r1p :: Number -> Number
-    , r2p :: Number -> Number
-    , p0p :: Number -> Number
-    , p1p :: Number -> Number
-    , p2p :: Number -> Number
     }
 
 type Extern
@@ -98,12 +91,6 @@ createFrame { time } =
             , u0ph: 0.0
             , u1ph: 0.0
             , u2ph: 0.0
-            , r0p: const $ 1.0
-            , r1p: const $ 1.0
-            , r2p: const $ 1.0
-            , p0p: const $ 220.0
-            , p1p: const $ 440.0
-            , p2p: const $ 880.0
             }
       )
 
@@ -125,20 +112,11 @@ piece ::
   Scene Extern audio engine Frame0 Unit
 piece =
   createFrame
-    @!> iloop \e { asdr0, asdr1, asdr2, ptime, u0ph, u1ph, u2ph, r0p, r1p, r2p, p0p, p1p, p2p } ->
+    @!> iloop \e { asdr0, asdr1, asdr2, ptime, u0ph, u1ph, u2ph } ->
         let
           { time, headroom, world } = e
 
-          uw = unwag world
-
-          w =
-            { rate0: fromMaybe r0p uw.rate0
-            , rate1: fromMaybe r1p uw.rate1
-            , rate2: fromMaybe r2p uw.rate2
-            , pitch0: fromMaybe p0p uw.pitch0
-            , pitch1: fromMaybe p1p uw.pitch1
-            , pitch2: fromMaybe p2p uw.pitch2
-            }
+          w = unwag world
 
           mp = makePulse headroom (time - ptime)
 
@@ -149,9 +127,9 @@ piece =
             }
         in
           ichange
-            { unit0: head $ snd res.u0
-            , unit1: head $ snd res.u1
-            , unit2: head $ snd res.u2
+            { unit0: head (snd res.u0) * pure (w.vol0 time)
+            , unit1: head (snd res.u1) * pure (w.vol1 time)
+            , unit2: head (snd res.u2) * pure (w.vol2 time)
             , osc0: w.pitch0 time
             , osc1: w.pitch1 time
             , osc2: w.pitch2 time
@@ -163,10 +141,4 @@ piece =
               , u0ph: fst res.u0
               , u1ph: fst res.u1
               , u2ph: fst res.u2
-              , r0p: w.rate0
-              , r1p: w.rate1
-              , r2p: w.rate2
-              , p0p: w.pitch0
-              , p1p: w.pitch1
-              , p2p: w.pitch2
               }

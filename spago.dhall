@@ -26,6 +26,7 @@ You can edit this file as you like.
   , "prelude"
   , "psci-support"
   , "record"
+  , "refs"
   , "simple-json"
   , "sized-vectors"
   , "transformers"
