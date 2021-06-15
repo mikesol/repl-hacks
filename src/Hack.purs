@@ -97,6 +97,33 @@ instance convertPSCITVol2Identity :: ConvertOption PSCIT_ "vol2" (Maybe Number) 
 instance convertPSCITVol2F :: ConvertOption PSCIT_ "vol2" (Number -> Number) (Maybe (Number -> Number)) where
   convertOption _ _ = pure
 
+---
+instance convertPSCITDVolPure :: ConvertOption PSCIT_ "dvol" Number (Maybe (Number -> Number)) where
+  convertOption _ _ = pure <<< const
+
+instance convertPSCITDVolIdentity :: ConvertOption PSCIT_ "dvol" (Maybe Number) (Maybe (Number -> Number)) where
+  convertOption _ _ = map const
+
+instance convertPSCITDVolF :: ConvertOption PSCIT_ "dvol" (Number -> Number) (Maybe (Number -> Number)) where
+  convertOption _ _ = pure
+
+instance convertPSCITDelayPure :: ConvertOption PSCIT_ "delay" Number (Maybe (Number -> Number)) where
+  convertOption _ _ = pure <<< const
+
+instance convertPSCITDelayIdentity :: ConvertOption PSCIT_ "delay" (Maybe Number) (Maybe (Number -> Number)) where
+  convertOption _ _ = map const
+
+instance convertPSCITDelayF :: ConvertOption PSCIT_ "delay" (Number -> Number) (Maybe (Number -> Number)) where
+  convertOption _ _ = pure
+
+instance convertPSCITDFiltPure :: ConvertOption PSCIT_ "dfilt" Number (Maybe (Number -> Number)) where
+  convertOption _ _ = pure <<< const
+
+instance convertPSCITDFiltIdentity :: ConvertOption PSCIT_ "dfilt" (Maybe Number) (Maybe (Number -> Number)) where
+  convertOption _ _ = map const
+
+instance convertPSCITDFiltF :: ConvertOption PSCIT_ "dfilt" (Number -> Number) (Maybe (Number -> Number)) where
+  convertOption _ _ = pure
 
 type Fields' (a :: Type)
   = ( rate0 :: a
@@ -108,6 +135,9 @@ type Fields' (a :: Type)
     , vol0 :: a
     , vol1 :: a
     , vol2 :: a
+    , dvol :: a
+    , delay :: a
+    , dfilt :: a
     )
 
 type FieldsM
@@ -127,6 +157,9 @@ defaultOptions =
   , vol0: empty
   , vol1: empty
   , vol2: empty
+  , dvol: empty
+  , delay: empty
+  , dfilt: empty
   }
 
 psci ::
@@ -177,6 +210,9 @@ wagb =
                 , vol0: const 1.0
                 , vol1: const 1.0
                 , vol2: const 1.0
+                , dvol: const 0.0
+                , dfilt: const 100.0
+                , delay: const 0.2
                 }
           )
       eAB
@@ -195,6 +231,9 @@ wagb =
                 , vol0: fromMaybe old.vol0 nw.vol0
                 , vol1: fromMaybe old.vol1 nw.vol1
                 , vol2: fromMaybe old.vol2 nw.vol2
+                , dvol: fromMaybe old.dvol nw.dvol
+                , dfilt: fromMaybe old.dfilt nw.dfilt
+                , delay: fromMaybe old.delay nw.delay
                 }
             let
               mx = Wag $ wagTag /\ mx'

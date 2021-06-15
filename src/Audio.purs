@@ -1,6 +1,7 @@
 module Audio where
 
 import Prelude
+
 import Control.Apply.Indexed ((:*>))
 import Control.Comonad.Cofree (Cofree, head, tail)
 import Data.Int (toNumber)
@@ -16,7 +17,7 @@ import WAGS.Change (ichange)
 import WAGS.Control.Functions.Validated (iloop, (@!>))
 import WAGS.Control.Indexed (IxWAG)
 import WAGS.Control.Types (Frame0, Scene)
-import WAGS.Graph.AudioUnit (OnOff(..), TGain, TPeriodicOsc, TSpeaker)
+import WAGS.Graph.AudioUnit (OnOff(..), TDelay, TGain, THighpass, TPeriodicOsc, TSpeaker)
 import WAGS.Graph.Parameter (AudioParameter, ff)
 import WAGS.Interpret (class AudioInterpret)
 import WAGS.NE2CF (ASDR, TimeHeadroom, makeLoopingPiecewise)
@@ -47,7 +48,10 @@ lpwf = makeLoopingPiecewise startAgain pwf :: ASDR
 
 type SceneType
   = { speaker :: TSpeaker /\ { mix :: Unit }
-    , mix :: TGain /\ { unit0 :: Unit, unit1 :: Unit, unit2 :: Unit }
+    , mix :: TGain /\ { unit0 :: Unit, unit1 :: Unit, unit2 :: Unit, del :: Unit }
+    , del :: TDelay /\ { dmix :: Unit }
+    , dmix :: TDelay /\ { dhpf :: Unit }
+    , dhpf :: THighpass /\ { mix :: Unit }
     , unit0 :: TGain /\ { osc0 :: Unit }
     , osc0 :: TPeriodicOsc /\ {}
     , unit1 :: TGain /\ { osc1 :: Unit }
@@ -133,6 +137,9 @@ piece =
             , osc0: w.pitch0 time
             , osc1: w.pitch1 time
             , osc2: w.pitch2 time
+            , dhpf: w.dfilt time
+            , del: w.delay time
+            , dmix: w.dvol time
             }
             $> { asdr0: tail $ snd res.u0
               , asdr1: tail $ snd res.u1
