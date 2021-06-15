@@ -1,4 +1,4 @@
-module Hack (Wag, WagM, wag, unwag, wagb, psci, PSCIT_, FieldsM, Fields') where
+module Hack (Wag, WagM, initialWag, wag, unwag, wagb, psci, PSCIT_, FieldsM, Fields') where
 
 import Prelude
 import Control.Plus (empty)
@@ -7,6 +7,7 @@ import Data.Maybe (Maybe, fromMaybe)
 import Data.Tuple (snd)
 import Data.Tuple.Nested (type (/\), (/\))
 import Effect (Effect)
+import Effect.Class.Console (log)
 import Effect.Ref as Ref
 import FRP.Behavior (Behavior, behavior)
 import FRP.Event (makeEvent, subscribe)
@@ -125,6 +126,16 @@ instance convertPSCITDFiltIdentity :: ConvertOption PSCIT_ "dfilt" (Maybe Number
 instance convertPSCITDFiltF :: ConvertOption PSCIT_ "dfilt" (Number -> Number) (Maybe (Number -> Number)) where
   convertOption _ _ = pure
 
+--
+instance convertPSCITVocPure :: ConvertOption PSCIT_ "voc" Number (Maybe (Number -> Number)) where
+  convertOption _ _ = pure <<< const
+
+instance convertPSCITVocIdentity :: ConvertOption PSCIT_ "voc" (Maybe Number) (Maybe (Number -> Number)) where
+  convertOption _ _ = map const
+
+instance convertPSCITVocF :: ConvertOption PSCIT_ "voc" (Number -> Number) (Maybe (Number -> Number)) where
+  convertOption _ _ = pure
+
 type Fields' (a :: Type)
   = ( rate0 :: a
     , rate1 :: a
@@ -138,6 +149,7 @@ type Fields' (a :: Type)
     , dvol :: a
     , delay :: a
     , dfilt :: a
+    , voc :: a
     )
 
 type FieldsM
@@ -160,6 +172,7 @@ defaultOptions =
   , dvol: empty
   , delay: empty
   , dfilt: empty
+  , voc: empty
   }
 
 psci ::
@@ -194,27 +207,30 @@ unwag (Wag f) = snd f
 
 foreign import wag_ :: WagM -> Effect WagM
 
-wagb :: Behavior Wag
-wagb =
+initialWag :: Effect (Ref.Ref Wag)
+initialWag =
+  Ref.new
+    ( Wag $ wagTag
+        /\ { rate0: const 1.0
+          , rate1: const 1.0
+          , rate2: const 1.0
+          , pitch0: const 220.0
+          , pitch1: const 440.0
+          , pitch2: const 880.0
+          , vol0: const 1.0
+          , vol1: const 1.0
+          , vol2: const 1.0
+          , dvol: const 0.0
+          , dfilt: const 100.0
+          , delay: const 0.2
+          , voc: const 0.0
+          }
+    )
+
+wagb :: Ref.Ref Wag -> Behavior Wag
+wagb wagRef =
   behavior \eAB ->
     makeEvent \cont -> do
-      wagRef <-
-        Ref.new
-          ( Wag $ wagTag
-              /\ { rate0: const 1.0
-                , rate1: const 1.0
-                , rate2: const 1.0
-                , pitch0: const 220.0
-                , pitch1: const 440.0
-                , pitch2: const 880.0
-                , vol0: const 1.0
-                , vol1: const 1.0
-                , vol2: const 1.0
-                , dvol: const 0.0
-                , dfilt: const 100.0
-                , delay: const 0.2
-                }
-          )
       eAB
         `subscribe`
           \aToB -> do
@@ -234,6 +250,7 @@ wagb =
                 , dvol: fromMaybe old.dvol nw.dvol
                 , dfilt: fromMaybe old.dfilt nw.dfilt
                 , delay: fromMaybe old.delay nw.delay
+                , voc: fromMaybe old.voc nw.voc
                 }
             let
               mx = Wag $ wagTag /\ mx'

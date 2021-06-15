@@ -1,11 +1,11 @@
 module Main where
 
 import Prelude
-
 import Audio (piece)
 import Control.Comonad.Cofree (Cofree, (:<))
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..))
+import Data.Nullable (toNullable)
 import Data.Tuple (fst, snd)
 import Data.Tuple.Nested (type (/\))
 import Data.Typelevel.Num (class Pos)
@@ -13,8 +13,8 @@ import Data.Vec as V
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
-import Hack (wagb)
 import FRP.Event (subscribe)
+import Hack (initialWag, wagb)
 import Halogen (ClassName(..))
 import Halogen as H
 import Halogen.Aff (awaitBody, runHalogenAff)
@@ -22,7 +22,7 @@ import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
 import Halogen.VDom.Driver (runUI)
-import WAGS.Interpret (AudioContext, BrowserPeriodicWave, FFIAudio(..), close, context, defaultFFIAudio, makePeriodicWave, makeUnitCache)
+import WAGS.Interpret (AudioContext, BrowserPeriodicWave, FFIAudio(..), close, context, defaultFFIAudio, getMicrophoneAndCamera, makePeriodicWave, makeUnitCache)
 import WAGS.Run (run)
 
 main :: Effect Unit
@@ -103,14 +103,16 @@ handleAction = case _ of
   StartAudio -> do
     handleAction StopAudio
     ctx <- H.liftEffect context
+    { microphone } <- H.liftAff $ getMicrophoneAndCamera true false
     unitCache <- H.liftEffect makeUnitCache
     let
-      ffiAudio = defaultFFIAudio ctx unitCache
+      ffiAudio = (defaultFFIAudio ctx unitCache) { microphone = toNullable microphone }
     unsubscribe <-
-      H.liftEffect
-        $ subscribe
-            (run (pure unit) wagb { easingAlgorithm } (FFIAudio ffiAudio) piece)
-            (const $ pure unit)
+      H.liftEffect do
+        initialWag' <- initialWag
+        subscribe
+          (run (pure unit) (wagb initialWag') { easingAlgorithm } (FFIAudio ffiAudio) piece)
+          (const $ pure unit)
     H.modify_ _ { unsubscribe = unsubscribe, audioCtx = Just ctx }
   StopAudio -> do
     { unsubscribe, audioCtx } <- H.get

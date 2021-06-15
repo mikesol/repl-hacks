@@ -17,7 +17,7 @@ import WAGS.Change (ichange)
 import WAGS.Control.Functions.Validated (iloop, (@!>))
 import WAGS.Control.Indexed (IxWAG)
 import WAGS.Control.Types (Frame0, Scene)
-import WAGS.Graph.AudioUnit (OnOff(..), TDelay, TGain, THighpass, TPeriodicOsc, TSpeaker)
+import WAGS.Graph.AudioUnit (OnOff(..), TDelay, TGain, THighpass, TMicrophone, TPeriodicOsc, TSpeaker)
 import WAGS.Graph.Parameter (AudioParameter, ff)
 import WAGS.Interpret (class AudioInterpret)
 import WAGS.NE2CF (ASDR, TimeHeadroom, makeLoopingPiecewise)
@@ -47,11 +47,16 @@ pwf = (0.00 /\ 0.0) :| (0.03 /\ 1.0) : (0.07 /\ 0.1) : (0.09 /\ 0.0) : Nil
 lpwf = makeLoopingPiecewise startAgain pwf :: ASDR
 
 type SceneType
-  = { speaker :: TSpeaker /\ { mix :: Unit }
-    , mix :: TGain /\ { unit0 :: Unit, unit1 :: Unit, unit2 :: Unit, del :: Unit }
+  = { speaker :: TSpeaker /\ { toSpeaker :: Unit }
+    , toSpeaker :: TGain /\ { mix :: Unit, voc :: Unit }
+    -- voice
+    , voc :: TGain /\ { microphone :: Unit, del :: Unit }
     , del :: TDelay /\ { dmix :: Unit }
-    , dmix :: TDelay /\ { dhpf :: Unit }
-    , dhpf :: THighpass /\ { mix :: Unit }
+    , dmix :: TGain /\ { dhpf :: Unit }
+    , dhpf :: THighpass /\ { voc :: Unit }
+    , microphone :: TMicrophone /\ {}
+    -- synth
+    , mix :: TGain /\ { unit0 :: Unit, unit1 :: Unit, unit2 :: Unit }
     , unit0 :: TGain /\ { osc0 :: Unit }
     , osc0 :: TPeriodicOsc /\ {}
     , unit1 :: TGain /\ { osc1 :: Unit }
@@ -84,6 +89,8 @@ createFrame { time } =
           , unit0: 0.0
           , unit1: 0.0
           , unit2: 0.0
+          , toSpeaker: 1.0
+          , voc: 0.0
           , osc0: { waveform: osc0, freq: 220.0, onOff: On }
           , osc1: { waveform: osc1, freq: 440.0, onOff: On }
           , osc2: { waveform: osc2, freq: 880.0, onOff: On }
@@ -140,6 +147,7 @@ piece =
             , dhpf: w.dfilt time
             , del: w.delay time
             , dmix: w.dvol time
+            , voc: w.voc time
             }
             $> { asdr0: tail $ snd res.u0
               , asdr1: tail $ snd res.u1
