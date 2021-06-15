@@ -14,63 +14,80 @@ import FRP.Event (makeEvent, subscribe)
 data PSCIT_
   = PSCIT_
 
-instance convertPSCITRate0Pure :: ConvertOption PSCIT_ "rate0" Number (Maybe Number) where
+instance convertPSCITRate0Pure :: ConvertOption PSCIT_ "rate0" Number (Maybe (Number -> Number)) where
+  convertOption _ _ = pure <<< const
+
+instance convertPSCITRate0Identity :: ConvertOption PSCIT_ "rate0" (Maybe Number) (Maybe (Number -> Number)) where
+  convertOption _ _ = map const
+
+instance convertPSCITRate0F :: ConvertOption PSCIT_ "rate0" (Number -> Number) (Maybe (Number -> Number)) where
   convertOption _ _ = pure
 
-instance convertPSCITRate0Identity :: ConvertOption PSCIT_ "rate0" (Maybe Number) (Maybe Number) where
-  convertOption _ _ = identity
+instance convertPSCITRate1Pure :: ConvertOption PSCIT_ "rate1" Number (Maybe (Number -> Number)) where
+  convertOption _ _ = pure <<< const
 
-instance convertPSCITRate1Pure :: ConvertOption PSCIT_ "rate1" Number (Maybe Number) where
+instance convertPSCITRate1Identity :: ConvertOption PSCIT_ "rate1" (Maybe Number) (Maybe (Number -> Number)) where
+  convertOption _ _ = map const
+
+instance convertPSCITRate1F :: ConvertOption PSCIT_ "rate1" (Number -> Number) (Maybe (Number -> Number)) where
   convertOption _ _ = pure
 
-instance convertPSCITRate1Identity :: ConvertOption PSCIT_ "rate1" (Maybe Number) (Maybe Number) where
-  convertOption _ _ = identity
+instance convertPSCITRate2Pure :: ConvertOption PSCIT_ "rate2" Number (Maybe (Number -> Number)) where
+  convertOption _ _ = pure <<< const
 
-instance convertPSCITRate2Pure :: ConvertOption PSCIT_ "rate2" Number (Maybe Number) where
+instance convertPSCITRate2Identity :: ConvertOption PSCIT_ "rate2" (Maybe Number) (Maybe (Number -> Number)) where
+  convertOption _ _ = map const
+
+instance convertPSCITRate2F :: ConvertOption PSCIT_ "rate2" (Number -> Number) (Maybe (Number -> Number)) where
   convertOption _ _ = pure
-
-instance convertPSCITRate2Identity :: ConvertOption PSCIT_ "rate2" (Maybe Number) (Maybe Number) where
-  convertOption _ _ = identity
-
 ---
-instance convertPSCITPitch0Pure :: ConvertOption PSCIT_ "pitch0" Number (Maybe Number) where
+instance convertPSCITPitch0Pure :: ConvertOption PSCIT_ "pitch0" Number (Maybe (Number -> Number)) where
+  convertOption _ _ = pure <<< const
+
+instance convertPSCITPitch0Identity :: ConvertOption PSCIT_ "pitch0" (Maybe Number) (Maybe (Number -> Number)) where
+  convertOption _ _ = map const
+
+instance convertPSCITPitch0F :: ConvertOption PSCIT_ "pitch0" (Number -> Number) (Maybe (Number -> Number)) where
   convertOption _ _ = pure
 
-instance convertPSCITPitch0Identity :: ConvertOption PSCIT_ "pitch0" (Maybe Number) (Maybe Number) where
-  convertOption _ _ = identity
+instance convertPSCITPitch1Pure :: ConvertOption PSCIT_ "pitch1" Number (Maybe (Number -> Number)) where
+  convertOption _ _ = pure <<< const
 
-instance convertPSCITPitch1Pure :: ConvertOption PSCIT_ "pitch1" Number (Maybe Number) where
+instance convertPSCITPitch1Identity :: ConvertOption PSCIT_ "pitch1" (Maybe Number) (Maybe (Number -> Number)) where
+  convertOption _ _ = map const
+
+instance convertPSCITPitch1F :: ConvertOption PSCIT_ "pitch1" (Number -> Number) (Maybe (Number -> Number)) where
   convertOption _ _ = pure
 
-instance convertPSCITPitch1Identity :: ConvertOption PSCIT_ "pitch1" (Maybe Number) (Maybe Number) where
-  convertOption _ _ = identity
+instance convertPSCITPitch2Pure :: ConvertOption PSCIT_ "pitch2" Number (Maybe (Number -> Number)) where
+  convertOption _ _ = pure <<< const
 
-instance convertPSCITPitch2Pure :: ConvertOption PSCIT_ "pitch2" Number (Maybe Number) where
+instance convertPSCITPitch2Identity :: ConvertOption PSCIT_ "pitch2" (Maybe Number) (Maybe (Number -> Number)) where
+  convertOption _ _ = map const
+
+instance convertPSCITPitch2F :: ConvertOption PSCIT_ "pitch2" (Number -> Number) (Maybe (Number -> Number)) where
   convertOption _ _ = pure
-
-instance convertPSCITPitch2Identity :: ConvertOption PSCIT_ "pitch2" (Maybe Number) (Maybe Number) where
-  convertOption _ _ = identity
 
 type Optional :: forall k. k -> Row k
 type Optional a
   = ( rate0 :: a, rate1 :: a, rate2 :: a, pitch0 :: a, pitch1 :: a, pitch2 :: a )
 
 type All
-  = ( | Optional (Maybe Number) )
+  = ( | Optional (Maybe (Number -> Number)) )
 
-defaultOptions :: { | Optional (Maybe Number) }
+defaultOptions :: { | All }
 defaultOptions =
-  { rate0: empty
-  , rate1: empty
-  , rate2: empty
-  , pitch0: empty
-  , pitch1: empty
-  , pitch2: empty
+  { rate0:  empty
+  , rate1:  empty
+  , rate2:  empty
+  , pitch0:  empty
+  , pitch1:  empty
+  , pitch2:  empty
   }
 
 psci ::
   forall provided.
-  ConvertOptionsWithDefaults PSCIT_ { | Optional (Maybe Number) } { | provided } { | All } =>
+  ConvertOptionsWithDefaults PSCIT_ { | All } { | provided } { | All } =>
   { | provided } ->
   { | All }
 psci provided = all
@@ -83,15 +100,15 @@ type PSCIT
 
 wagTag = "__w4g__" :: String
 
-newtype Wag = Wag (String /\ (Number -> PSCIT))
+newtype Wag = Wag (String /\ PSCIT)
 
 instance showWag :: Show Wag where
   show _ = "Wagged!"
 
-wag :: (Number -> PSCIT) -> Wag
+wag :: PSCIT -> Wag
 wag = Wag <<< (/\) wagTag
 
-unwag :: Wag -> Number -> PSCIT
+unwag :: Wag -> PSCIT
 unwag (Wag f) = snd f
 
 foreign import wag_ :: Wag -> Effect Wag
@@ -99,4 +116,4 @@ foreign import wag_ :: Wag -> Effect Wag
 wagb :: Behavior Wag
 wagb = behavior \eAB ->
   makeEvent \cont -> do
-     eAB `subscribe` \aToB -> wag_ (wag $ const $ psci {}) >>= cont <<< aToB
+     eAB `subscribe` \aToB -> wag_ (wag $ psci {}) >>= cont <<< aToB

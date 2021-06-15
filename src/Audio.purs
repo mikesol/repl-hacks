@@ -65,12 +65,12 @@ type Acc
     , u0ph :: Number
     , u1ph :: Number
     , u2ph :: Number
-    , r0p :: Number
-    , r1p :: Number
-    , r2p :: Number
-    , p0p :: Number
-    , p1p :: Number
-    , p2p :: Number
+    , r0p :: Number -> Number
+    , r1p :: Number -> Number
+    , r2p :: Number -> Number
+    , p0p :: Number -> Number
+    , p1p :: Number -> Number
+    , p2p :: Number -> Number
     }
 
 type Extern
@@ -98,12 +98,12 @@ createFrame { time } =
             , u0ph: 0.0
             , u1ph: 0.0
             , u2ph: 0.0
-            , r0p: 1.0
-            , r1p: 1.0
-            , r2p: 1.0
-            , p0p: 220.0
-            , p1p: 440.0
-            , p2p: 880.0
+            , r0p: const $ 1.0
+            , r1p: const $ 1.0
+            , r2p: const $ 1.0
+            , p0p: const $ 220.0
+            , p1p: const $ 440.0
+            , p2p: const $ 880.0
             }
       )
 
@@ -129,7 +129,7 @@ piece =
         let
           { time, headroom, world } = e
 
-          uw = unwag world time
+          uw = unwag world
 
           w =
             { rate0: fromMaybe r0p uw.rate0
@@ -142,15 +142,19 @@ piece =
 
           mp = makePulse headroom (time - ptime)
 
-          res = { u0: mp asdr0 u0ph w.rate0, u1: mp asdr1 u1ph w.rate1, u2: mp asdr2 u2ph w.rate2 }
+          res =
+            { u0: mp asdr0 u0ph (w.rate0 time)
+            , u1: mp asdr1 u1ph (w.rate1 time)
+            , u2: mp asdr2 u2ph (w.rate2 time)
+            }
         in
           ichange
             { unit0: head $ snd res.u0
             , unit1: head $ snd res.u1
             , unit2: head $ snd res.u2
-            , osc0: w.pitch0
-            , osc1: w.pitch1
-            , osc2: w.pitch2
+            , osc0: w.pitch0 time
+            , osc1: w.pitch1 time
+            , osc2: w.pitch2 time
             }
             $> { asdr0: tail $ snd res.u0
               , asdr1: tail $ snd res.u1
