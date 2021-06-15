@@ -135,9 +135,9 @@ piece =
             { rate0: fromMaybe r0p uw.rate0
             , rate1: fromMaybe r1p uw.rate1
             , rate2: fromMaybe r2p uw.rate2
-            , pitch0: fromMaybe p0p uw.rate0
-            , pitch1: fromMaybe p1p uw.rate0
-            , pitch2: fromMaybe p2p uw.rate0
+            , pitch0: fromMaybe p0p uw.pitch0
+            , pitch1: fromMaybe p1p uw.pitch1
+            , pitch2: fromMaybe p2p uw.pitch2
             }
 
           mp = makePulse headroom (time - ptime)
@@ -148,6 +148,9 @@ piece =
             { unit0: head $ snd res.u0
             , unit1: head $ snd res.u1
             , unit2: head $ snd res.u2
+            , osc0: w.pitch0
+            , osc1: w.pitch1
+            , osc2: w.pitch2
             }
             $> { asdr0: tail $ snd res.u0
               , asdr1: tail $ snd res.u1

@@ -1,4 +1,4 @@
-module Hack(Wag, wag, unwag, wagb, PSCIT, All, Optional) where
+module Hack(Wag, wag, unwag, wagb, psci, PSCIT_, PSCIT, All, Optional) where
 
 import Prelude
 
@@ -84,6 +84,9 @@ type PSCIT
 wagTag = "__w4g__" :: String
 
 newtype Wag = Wag (String /\ (Number -> PSCIT))
+
+instance showWag :: Show Wag where
+  show _ = "Wagged!"
 
 wag :: (Number -> PSCIT) -> Wag
 wag = Wag <<< (/\) wagTag
