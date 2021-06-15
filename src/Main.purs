@@ -1,6 +1,7 @@
 module Main where
 
 import Prelude
+
 import Audio (piece)
 import Control.Comonad.Cofree (Cofree, (:<))
 import Data.Foldable (for_)
@@ -12,6 +13,7 @@ import Data.Vec as V
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
+import Hack (wagb)
 import FRP.Event (subscribe)
 import Halogen (ClassName(..))
 import Halogen as H
@@ -107,7 +109,7 @@ handleAction = case _ of
     unsubscribe <-
       H.liftEffect
         $ subscribe
-            (run (pure unit) (pure unit) { easingAlgorithm } (FFIAudio ffiAudio) piece)
+            (run (pure unit) wagb { easingAlgorithm } (FFIAudio ffiAudio) piece)
             (const $ pure unit)
     H.modify_ _ { unsubscribe = unsubscribe, audioCtx = Just ctx }
   StopAudio -> do

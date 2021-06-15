@@ -9,6 +9,7 @@ You can edit this file as you like.
   , "cartesian"
   , "colors"
   , "console"
+  , "convertable-options"
   , "effect"
   , "either"
   , "event"
