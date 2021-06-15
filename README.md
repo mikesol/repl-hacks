@@ -1,3 +1,3 @@
 # Repl hacks
 
-Please forgive me...
+Live coding with PureScript wags in the Repl & in VSCode.
