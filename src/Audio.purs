@@ -1,7 +1,6 @@
 module Audio where
 
 import Prelude
-
 import Control.Apply.Indexed ((:*>))
 import Control.Comonad.Cofree (Cofree, head, tail)
 import Data.Int (toNumber)
@@ -144,10 +143,10 @@ piece =
             , osc0: w.pitch0 time
             , osc1: w.pitch1 time
             , osc2: w.pitch2 time
-            , dhpf: w.dfilt time
+            , dhpf: { freq: w.dfreq time, q: w.dq time }
             , del: w.delay time
             , dmix: w.dvol time
-            , voc: w.voc time
+            , voc: w.vvol time
             }
             $> { asdr0: tail $ snd res.u0
               , asdr1: tail $ snd res.u1

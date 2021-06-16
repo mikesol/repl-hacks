@@ -7,7 +7,6 @@ import Data.Maybe (Maybe, fromMaybe)
 import Data.Tuple (snd)
 import Data.Tuple.Nested (type (/\), (/\))
 import Effect (Effect)
-import Effect.Class.Console (log)
 import Effect.Ref as Ref
 import FRP.Behavior (Behavior, behavior)
 import FRP.Event (makeEvent, subscribe)
@@ -117,23 +116,32 @@ instance convertPSCITDelayIdentity :: ConvertOption PSCIT_ "delay" (Maybe Number
 instance convertPSCITDelayF :: ConvertOption PSCIT_ "delay" (Number -> Number) (Maybe (Number -> Number)) where
   convertOption _ _ = pure
 
-instance convertPSCITDFiltPure :: ConvertOption PSCIT_ "dfilt" Number (Maybe (Number -> Number)) where
+instance convertPSCITDFreqPure :: ConvertOption PSCIT_ "dfreq" Number (Maybe (Number -> Number)) where
   convertOption _ _ = pure <<< const
 
-instance convertPSCITDFiltIdentity :: ConvertOption PSCIT_ "dfilt" (Maybe Number) (Maybe (Number -> Number)) where
+instance convertPSCITDFreqIdentity :: ConvertOption PSCIT_ "dfreq" (Maybe Number) (Maybe (Number -> Number)) where
   convertOption _ _ = map const
 
-instance convertPSCITDFiltF :: ConvertOption PSCIT_ "dfilt" (Number -> Number) (Maybe (Number -> Number)) where
+instance convertPSCITDFreqF :: ConvertOption PSCIT_ "dfreq" (Number -> Number) (Maybe (Number -> Number)) where
+  convertOption _ _ = pure
+
+instance convertPSCITDQPure :: ConvertOption PSCIT_ "dq" Number (Maybe (Number -> Number)) where
+  convertOption _ _ = pure <<< const
+
+instance convertPSCITDQIdentity :: ConvertOption PSCIT_ "dq" (Maybe Number) (Maybe (Number -> Number)) where
+  convertOption _ _ = map const
+
+instance convertPSCITDQF :: ConvertOption PSCIT_ "dq" (Number -> Number) (Maybe (Number -> Number)) where
   convertOption _ _ = pure
 
 --
-instance convertPSCITVocPure :: ConvertOption PSCIT_ "voc" Number (Maybe (Number -> Number)) where
+instance convertPSCITVocPure :: ConvertOption PSCIT_ "vvol" Number (Maybe (Number -> Number)) where
   convertOption _ _ = pure <<< const
 
-instance convertPSCITVocIdentity :: ConvertOption PSCIT_ "voc" (Maybe Number) (Maybe (Number -> Number)) where
+instance convertPSCITVocIdentity :: ConvertOption PSCIT_ "vvol" (Maybe Number) (Maybe (Number -> Number)) where
   convertOption _ _ = map const
 
-instance convertPSCITVocF :: ConvertOption PSCIT_ "voc" (Number -> Number) (Maybe (Number -> Number)) where
+instance convertPSCITVocF :: ConvertOption PSCIT_ "vvol" (Number -> Number) (Maybe (Number -> Number)) where
   convertOption _ _ = pure
 
 type Fields' (a :: Type)
@@ -148,8 +156,9 @@ type Fields' (a :: Type)
     , vol2 :: a
     , dvol :: a
     , delay :: a
-    , dfilt :: a
-    , voc :: a
+    , dfreq :: a
+    , dq :: a
+    , vvol :: a
     )
 
 type FieldsM
@@ -171,8 +180,9 @@ defaultOptions =
   , vol2: empty
   , dvol: empty
   , delay: empty
-  , dfilt: empty
-  , voc: empty
+  , dfreq: empty
+  , dq: empty
+  , vvol: empty
   }
 
 psci ::
@@ -221,9 +231,10 @@ initialWag =
           , vol1: const 1.0
           , vol2: const 1.0
           , dvol: const 0.0
-          , dfilt: const 100.0
+          , dfreq: const 100.0
+          , dq: const 1.0
           , delay: const 0.2
-          , voc: const 0.0
+          , vvol: const 0.0
           }
     )
 
@@ -248,9 +259,10 @@ wagb wagRef =
                 , vol1: fromMaybe old.vol1 nw.vol1
                 , vol2: fromMaybe old.vol2 nw.vol2
                 , dvol: fromMaybe old.dvol nw.dvol
-                , dfilt: fromMaybe old.dfilt nw.dfilt
+                , dfreq: fromMaybe old.dfreq nw.dfreq
+                , dq: fromMaybe old.dq nw.dq
                 , delay: fromMaybe old.delay nw.delay
-                , voc: fromMaybe old.voc nw.voc
+                , vvol: fromMaybe old.vvol nw.vvol
                 }
             let
               mx = Wag $ wagTag /\ mx'
