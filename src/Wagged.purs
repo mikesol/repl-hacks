@@ -1,9 +1,7 @@
 module Wagged where
 
-import Prelude
-import Math
 import Hack
+import Math
+import Prelude
 
-
-
-it = wag $ psci { }
+it = wag $ psci {}
