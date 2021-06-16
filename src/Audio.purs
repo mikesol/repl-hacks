@@ -1,6 +1,7 @@
 module Audio where
 
 import Prelude
+
 import Control.Apply.Indexed ((:*>))
 import Control.Comonad.Cofree (Cofree, head, tail)
 import Data.Int (toNumber)
@@ -17,7 +18,7 @@ import WAGS.Control.Functions.Validated (iloop, (@!>))
 import WAGS.Control.Indexed (IxWAG)
 import WAGS.Control.Types (Frame0, Scene)
 import WAGS.Graph.AudioUnit (OnOff(..), TDelay, TGain, THighpass, TMicrophone, TPeriodicOsc, TSpeaker)
-import WAGS.Graph.Parameter (AudioParameter, ff)
+import WAGS.Graph.Parameter (AudioParameter, AudioParameter_, ff)
 import WAGS.Interpret (class AudioInterpret)
 import WAGS.NE2CF (ASDR, TimeHeadroom, makeLoopingPiecewise)
 import WAGS.Patch (ipatch)
@@ -116,6 +117,9 @@ makePulse headroom tdiff asdr tnow rate =
   in
     tn /\ cf
 
+ff06 :: forall v. v -> AudioParameter_ v
+ff06 = ff 0.06 <<< pure
+
 piece ::
   forall audio engine.
   AudioInterpret audio engine =>
@@ -140,13 +144,13 @@ piece =
             { unit0: head (snd res.u0) * pure (w.vol0 time)
             , unit1: head (snd res.u1) * pure (w.vol1 time)
             , unit2: head (snd res.u2) * pure (w.vol2 time)
-            , osc0: w.pitch0 time
-            , osc1: w.pitch1 time
-            , osc2: w.pitch2 time
-            , dhpf: { freq: w.dfreq time, q: w.dq time }
-            , del: w.delay time
-            , dmix: w.dvol time
-            , voc: w.vvol time
+            , osc0: ff06 $ w.pitch0 time
+            , osc1: ff06 $ w.pitch1 time
+            , osc2: ff06 $ w.pitch2 time
+            , dhpf: { freq: ff06 $ w.dfreq time, q: ff06 $ w.dq time }
+            , del: ff06 $ w.delay time
+            , dmix: ff06 $ w.dvol time
+            , voc: ff06 $ w.vvol time
             }
             $> { asdr0: tail $ snd res.u0
               , asdr1: tail $ snd res.u1
